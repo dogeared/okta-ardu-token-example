@@ -3,6 +3,22 @@
 #include <sha1.h>
 #include <TOTP.h>
 #include <Base32.h>
+#include <EEPROM.h>
+
+//#define DEBUG 1
+
+#ifdef DEBUG
+  #define DEBUG_PRINT(x) Serial.print (x)
+  #define DEBUG_PRINTDEC(x) Serial.print (x, DEC)
+  #define DEBUG_PRINTLN(x) Serial.println (x)
+#else
+  #define DEBUG_PRINT(x)
+  #define DEBUG_PRINTDEC(x)
+  #define DEBUG_PRINTLN(x)
+#endif
+
+const byte APP_ID = 0x20;
+const int APP_ID_SAVE_ADDRESS = EEPROM_STORAGE_SPACE_START + 100;
 
 Arduboy2 arduboy;
 Base32 base32;
@@ -45,6 +61,14 @@ void begin() {
 
 void setup() {
 
+  #ifdef DEBUG
+    Serial.begin(9600);
+    while (!Serial) {
+      ;
+    }
+  #endif
+  DEBUG_PRINTLN("setup()");
+
   secretSet = false;
   secretPosition = 0;
   //secret = "MMMMMMMMMMMMMMMM";
@@ -65,6 +89,15 @@ void setup() {
   int year = rtc.getYear();
   date = padNum(mon) + "/" + padNum(day) + "/" + padNum(year) + " " + padNum(hours) + ":" + padNum(minu) + ":" + padNum(sec);
 
+  byte appId = EEPROM.read(APP_ID_SAVE_ADDRESS);
+  if (appId != APP_ID) {
+    DEBUG_PRINTLN("First time in. Writing APP_ID and settings...");
+    EEPROM.write(APP_ID_SAVE_ADDRESS, APP_ID);
+    //saveTotpInfo(totpInfo);
+  } else {
+    DEBUG_PRINTLN("Found APP_ID. Loading in settings...");
+    //totpInfo = loadTotpInfo();
+  }
   begin();
 }
 
@@ -171,6 +204,7 @@ void setSecret() {
     secret.getBytes(secretBuf, secret.length() + 1);
     base32.fromBase32(secretBuf, sizeof(secretBuf), (byte*&)hmacKey);
 
+    // TODO - write settings to eeprom
     secretSet = true;
   }
 
@@ -232,7 +266,8 @@ void setDate() {
     rtc.setDate(dd, mm, yyyy);
     rtc.setTime(HH, MM, SS);
     rtc.startRTC();
-    
+
+    // TODO - write settings to eeprom
     dateSet = true;
   }
 
@@ -268,4 +303,3 @@ void showTotpCode() {
   String dateStr = padNum(mon) + "/" + padNum(day) + "/" + padNum(year) + " " + padNum(hours) + ":" + padNum(minu) + ":" + padNum(sec);
   printWithInvertChar(dateStr, 0, 30, -1, 1);
 }
-
