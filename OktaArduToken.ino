@@ -17,12 +17,29 @@
   #define DEBUG_PRINTLN(x)
 #endif
 
-const byte APP_ID = 0x20;
-const int APP_ID_SAVE_ADDRESS = EEPROM_STORAGE_SPACE_START + 100;
+const byte APP_ID = 0x2A;
+const int APP_ID_SAVE_ADDRESS = EEPROM_STORAGE_SPACE_START + 51;
+const int TOTP_SECRET_SAVE_ADDRESS = APP_ID_SAVE_ADDRESS + sizeof(int);
+const int TOTP_SEC_SAVE_ADDRESS = TOTP_SECRET_SAVE_ADDRESS + (sizeof(byte) * 16);
+const int TOTP_MIN_SAVE_ADDRESS = TOTP_SEC_SAVE_ADDRESS + sizeof(int);
+const int TOTP_HOUR_SAVE_ADDRESS = TOTP_MIN_SAVE_ADDRESS + sizeof(int);
+const int TOTP_DAY_SAVE_ADDRESS = TOTP_HOUR_SAVE_ADDRESS + sizeof(int);
+const int TOTP_MON_SAVE_ADDRESS = TOTP_DAY_SAVE_ADDRESS + sizeof(int);
+const int TOTP_YEAR_SAVE_ADDRESS = TOTP_MON_SAVE_ADDRESS + sizeof(int);
 
 Arduboy2 arduboy;
 Base32 base32;
 swRTC rtc;
+
+struct TotpInfo {
+  String secret;
+  int mon;
+  int day;
+  int year;
+  int hour;
+  int minu;
+  int sec;
+};
 
 String totpCode;
 bool secretSet;
@@ -31,6 +48,11 @@ String secret;
 String date;
 bool dateSet;
 int datePosition;
+TotpInfo totpInfo = {
+  "MMMMMMMMMMMMMMMM",
+  07, 23, 2018,
+  12, 0, 0
+};
 
 byte* hmacKey = NULL;
 byte secretBuf[16];
@@ -71,33 +93,33 @@ void setup() {
 
   secretSet = false;
   secretPosition = 0;
-  //secret = "MMMMMMMMMMMMMMMM";
-  secret = "C46MPM6ZTP3X6HQB";
+  secret = "MMMMMMMMMMMMMMMM";
+  //secret = "C46MPM6ZTP3X6HQB";
   dateSet = false;
   datePosition = 0;
   
-  rtc.stopRTC();
-  rtc.setDate(17, 7, 2018);
-  rtc.setTime(9, 00, 20);
-  rtc.startRTC();
-
-  int sec = rtc.getSeconds();
-  int minu = rtc.getMinutes();
-  int hours = rtc.getHours();
-  int day = rtc.getDay();
-  int mon = rtc.getMonth();
-  int year = rtc.getYear();
-  date = padNum(mon) + "/" + padNum(day) + "/" + padNum(year) + " " + padNum(hours) + ":" + padNum(minu) + ":" + padNum(sec);
-
   byte appId = EEPROM.read(APP_ID_SAVE_ADDRESS);
   if (appId != APP_ID) {
     DEBUG_PRINTLN("First time in. Writing APP_ID and settings...");
     EEPROM.write(APP_ID_SAVE_ADDRESS, APP_ID);
-    //saveTotpInfo(totpInfo);
+    writeTotpInfo(totpInfo);
   } else {
     DEBUG_PRINTLN("Found APP_ID. Loading in settings...");
-    //totpInfo = loadTotpInfo();
+    totpInfo = readTotpInfo();
+    // TODO - DRY
+    secretSet = true;
+    secret = totpInfo.secret;
+    totpInfo.secret.getBytes(secretBuf, totpInfo.secret.length() + 1);
+    base32.fromBase32(secretBuf, sizeof(secretBuf), (byte*&)hmacKey);
   }
+  // TODO - DRY
+  rtc.stopRTC();
+  rtc.setDate(totpInfo.day, totpInfo.mon, totpInfo.year);
+  rtc.setTime(totpInfo.hour, totpInfo.minu, totpInfo.sec);
+  rtc.startRTC();
+
+  date = padNum(totpInfo.mon) + "/" + padNum(totpInfo.day) + "/" + padNum(totpInfo.year) + " " + padNum(totpInfo.hour) + ":" + padNum(totpInfo.minu) + ":" + padNum(totpInfo.sec);
+
   begin();
 }
 
@@ -204,7 +226,9 @@ void setSecret() {
     secret.getBytes(secretBuf, secret.length() + 1);
     base32.fromBase32(secretBuf, sizeof(secretBuf), (byte*&)hmacKey);
 
-    // TODO - write settings to eeprom
+    totpInfo.secret = secret;
+    writeString(TOTP_SECRET_SAVE_ADDRESS, totpInfo.secret);
+
     secretSet = true;
   }
 
@@ -255,19 +279,25 @@ void setDate() {
   }
 
   if (arduboy.justPressed(A_BUTTON)) {
-    int mm = date.substring(0,2).toInt();
-    int dd = date.substring(3,5).toInt();
-    int yyyy = date.substring(6,10).toInt();
-    int HH = date.substring(11,13).toInt();
-    int MM = date.substring(14,16).toInt();
-    int SS = date.substring(17).toInt();
+    totpInfo.mon = date.substring(0,2).toInt();
+    totpInfo.day = date.substring(3,5).toInt();
+    totpInfo.year = date.substring(6,10).toInt();
+    totpInfo.hour = date.substring(11,13).toInt();
+    totpInfo.minu = date.substring(14,16).toInt();
+    totpInfo.sec = date.substring(17).toInt();
 
     rtc.stopRTC();
-    rtc.setDate(dd, mm, yyyy);
-    rtc.setTime(HH, MM, SS);
+    rtc.setDate(totpInfo.day, totpInfo.mon, totpInfo.year);
+    rtc.setTime(totpInfo.hour, totpInfo.minu, totpInfo.sec);
     rtc.startRTC();
 
-    // TODO - write settings to eeprom
+    writeInt(TOTP_SEC_SAVE_ADDRESS, totpInfo.sec);
+    writeInt(TOTP_MIN_SAVE_ADDRESS, totpInfo.minu);
+    writeInt(TOTP_HOUR_SAVE_ADDRESS, totpInfo.hour);
+    writeInt(TOTP_DAY_SAVE_ADDRESS, totpInfo.day);
+    writeInt(TOTP_MON_SAVE_ADDRESS, totpInfo.mon);
+    writeInt(TOTP_YEAR_SAVE_ADDRESS, totpInfo.year);
+    
     dateSet = true;
   }
 
@@ -302,4 +332,60 @@ void showTotpCode() {
   int year = rtc.getYear();
   String dateStr = padNum(mon) + "/" + padNum(day) + "/" + padNum(year) + " " + padNum(hours) + ":" + padNum(minu) + ":" + padNum(sec);
   printWithInvertChar(dateStr, 0, 30, -1, 1);
+}
+
+void writeString(int address, String str) {
+  DEBUG_PRINT("Writing String: ");
+  for(int i = 0; str[i] != '\0'; i++) {
+    EEPROM.write(address + i, str[i]);
+    DEBUG_PRINT(str[i]);
+  }
+  DEBUG_PRINTLN();
+}
+
+String readString(int address, int size) {
+  char buf[size+1];
+  DEBUG_PRINT("Reading String: ");
+  for (int i = 0; i < size; i++) {
+    buf[i] = EEPROM.read(address + i);
+    DEBUG_PRINT(buf[i]);
+  }
+  DEBUG_PRINTLN();
+  buf[size] = 0;
+  return String(buf);
+}
+
+void writeInt(int address, int val) {
+  EEPROM.put(address, val);
+}
+
+int readInt(int address) {
+  int ret;
+  EEPROM.get(address, ret);
+  return ret;
+}
+
+void writeTotpInfo(TotpInfo totpInfo) {
+  writeString(TOTP_SECRET_SAVE_ADDRESS, totpInfo.secret);
+  writeInt(TOTP_SEC_SAVE_ADDRESS, totpInfo.sec);
+  writeInt(TOTP_MIN_SAVE_ADDRESS, totpInfo.minu);
+  writeInt(TOTP_HOUR_SAVE_ADDRESS, totpInfo.hour);
+  writeInt(TOTP_DAY_SAVE_ADDRESS, totpInfo.day);
+  writeInt(TOTP_MON_SAVE_ADDRESS, totpInfo.mon);
+  writeInt(TOTP_YEAR_SAVE_ADDRESS, totpInfo.year);
+  DEBUG_PRINTLN("Wrote totpInfo to eeprom.");
+}
+
+TotpInfo readTotpInfo() {
+  TotpInfo ret = {};
+  
+  ret.secret = readString(TOTP_SECRET_SAVE_ADDRESS, 16);
+  ret.sec = readInt(TOTP_SEC_SAVE_ADDRESS);
+  ret.minu = readInt(TOTP_MIN_SAVE_ADDRESS);
+  ret.hour = readInt(TOTP_HOUR_SAVE_ADDRESS);
+  ret.day = readInt(TOTP_DAY_SAVE_ADDRESS);
+  ret.mon = readInt(TOTP_MON_SAVE_ADDRESS);
+  ret.year = readInt(TOTP_YEAR_SAVE_ADDRESS);
+  
+  return ret;
 }
