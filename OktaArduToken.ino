@@ -86,7 +86,6 @@ void begin() {
 }
 
 void setup() {
-
   #ifdef DEBUG
     Serial.begin(9600);
     while (!Serial) {
@@ -131,57 +130,6 @@ void loop() {
   }
 
   arduboy.display();
-}
-
-void printWithInvertChar(String str, int16_t x, int16_t y, int16_t charToInvert, int16_t size) {
-  int color = 1;
-  int bg = 0;
-  for(int i = 0; str[i] != '\0'; i++) {
-    if (charToInvert == i) {
-      color = 0;
-      bg = 1;
-    } else {
-      color = 1;
-      bg = 0;
-    }
-    arduboy.drawChar(x + (6*i*size), y, str[i], color, bg, size);
-  }
-}
-
-String padNum(int num) {
-  if (num < 10) {
-    return "0" + String(num);
-  } else {
-    return String(num);
-  }
-}
-
-String updateSecret(String secret, int secretPosition, int addOrSub) {
-  String ret = secret.substring(0, secretPosition);
-  char upd = secret.charAt(secretPosition) + addOrSub;
-  if (upd < '0') {
-    upd = 'Z';
-  } else if (upd > 'Z') {
-    upd = '0';
-  } else if (upd < 'A' and upd > '9' and addOrSub < 0) {
-    upd = '9';
-  } else if (upd > '9' and upd < 'A' and addOrSub > 0) {
-    upd = 'A';
-  }
-  ret += upd + secret.substring(secretPosition + 1);
-  return ret;
-}
-
-String updateDate(String date, int datePosition, int addOrSub) {
-  String ret = date.substring(0, datePosition);
-  char upd = date.charAt(datePosition) + addOrSub;
-  if (upd < '0') {
-    upd = '9';
-  } else if (upd > '9') {
-    upd = '0';
-  }
-  ret += upd + date.substring(datePosition + 1);
-  return ret;
 }
 
 void setSecret() {
@@ -323,6 +271,57 @@ void showTotpCode() {
   dateStr = getDateString(totpInfo);
   
   printWithInvertChar(dateStr, 0, 30, -1, 1);
+}
+
+void printWithInvertChar(String str, int16_t x, int16_t y, int16_t charToInvert, int16_t size) {
+  int color = 1;
+  int bg = 0;
+  for(int i = 0; str[i] != '\0'; i++) {
+    if (charToInvert == i) {
+      color = 0;
+      bg = 1;
+    } else {
+      color = 1;
+      bg = 0;
+    }
+    arduboy.drawChar(x + (6*i*size), y, str[i], color, bg, size);
+  }
+}
+
+String padNum(int num) {
+  if (num < 10) {
+    return "0" + String(num);
+  } else {
+    return String(num);
+  }
+}
+
+String updateSecret(String secret, int secretPosition, int addOrSub) {
+  String ret = secret.substring(0, secretPosition);
+  char upd = secret.charAt(secretPosition) + addOrSub;
+  if (upd < '0') {
+    upd = 'Z';
+  } else if (upd > 'Z') {
+    upd = '0';
+  } else if (upd < 'A' and upd > '9' and addOrSub < 0) {
+    upd = '9';
+  } else if (upd > '9' and upd < 'A' and addOrSub > 0) {
+    upd = 'A';
+  }
+  ret += upd + secret.substring(secretPosition + 1);
+  return ret;
+}
+
+String updateDate(String date, int datePosition, int addOrSub) {
+  String ret = date.substring(0, datePosition);
+  char upd = date.charAt(datePosition) + addOrSub;
+  if (upd < '0') {
+    upd = '9';
+  } else if (upd > '9') {
+    upd = '0';
+  }
+  ret += upd + date.substring(datePosition + 1);
+  return ret;
 }
 
 void updateHmacKey() {
