@@ -49,7 +49,7 @@ struct TotpInfo {
 String totpCode;
 bool secretSet;
 int secretPosition;
-String date;
+String dateStr;
 bool dateSet;
 int datePosition;
 TotpInfo totpInfo = {
@@ -108,19 +108,11 @@ void setup() {
   } else {
     DEBUG_PRINTLN("Found APP_ID. Loading in settings...");
     totpInfo = readTotpInfo();
-    // TODO - DRY
     secretSet = true;
-    totpInfo.secret.getBytes(secretBuf, totpInfo.secret.length() + 1);
-    base32.fromBase32(secretBuf, sizeof(secretBuf), (byte*&)hmacKey);
+    updateHmacKey();
   }
-  // TODO - DRY
-  rtc.stopRTC();
-  rtc.setDate(totpInfo.day, totpInfo.mon, totpInfo.year);
-  rtc.setTime(totpInfo.hour, totpInfo.minu, totpInfo.sec);
-  rtc.startRTC();
-
-  date = padNum(totpInfo.mon) + "/" + padNum(totpInfo.day) + "/" + padNum(totpInfo.year) + " " + padNum(totpInfo.hour) + ":" + padNum(totpInfo.minu) + ":" + padNum(totpInfo.sec);
-
+  updateRtc();
+  dateStr = getDateString(totpInfo);
   begin();
 }
 
@@ -225,10 +217,8 @@ void setSecret() {
   }
 
   if (arduboy.justPressed(A_BUTTON)) {
-    totpInfo.secret.getBytes(secretBuf, totpInfo.secret.length() + 1);
-    base32.fromBase32(secretBuf, sizeof(secretBuf), (byte*&)hmacKey);
-
     writeString(TOTP_SECRET_SAVE_ADDRESS, totpInfo.secret);
+    updateHmacKey();
     secretSet = true;
   }
 
@@ -237,6 +227,7 @@ void setSecret() {
 
 void setDate() {
   DEBUG_PRINTLN_INTERVAL("setDate()");
+  
   arduboy.setCursor(0, 0);
   arduboy.print("Set Date (GMT):");
   arduboy.setCursor(0, 30);
@@ -250,7 +241,7 @@ void setDate() {
     if (datePosition == 2 or datePosition == 5 or datePosition == 10 or datePosition == 13 or datePosition == 16) {
       datePosition++;
     }
-    if (datePosition >= date.length()) {
+    if (datePosition >= dateStr.length()) {
       datePosition = 0;
     }
   }
@@ -262,16 +253,16 @@ void setDate() {
     }
 
     if (datePosition < 0) {
-      datePosition = date.length() - 1;
+      datePosition = dateStr.length() - 1;
     }
   }
 
   if (arduboy.justPressed(DOWN_BUTTON)) {
-    date = updateDate(date, datePosition, -1);  
+    dateStr = updateDate(dateStr, datePosition, -1);  
   }
 
   if (arduboy.justPressed(UP_BUTTON)) {
-    date = updateDate(date, datePosition, 1);
+    dateStr = updateDate(dateStr, datePosition, 1);
   }
 
   if (arduboy.justPressed(B_BUTTON)) {
@@ -279,18 +270,15 @@ void setDate() {
   }
 
   if (arduboy.justPressed(A_BUTTON)) {
-    totpInfo.mon = date.substring(0,2).toInt();
-    totpInfo.day = date.substring(3,5).toInt();
-    totpInfo.year = date.substring(6,10).toInt();
-    totpInfo.hour = date.substring(11,13).toInt();
-    totpInfo.minu = date.substring(14,16).toInt();
-    totpInfo.sec = date.substring(17).toInt();
+    totpInfo.mon = dateStr.substring(0,2).toInt();
+    totpInfo.day = dateStr.substring(3,5).toInt();
+    totpInfo.year = dateStr.substring(6,10).toInt();
+    totpInfo.hour = dateStr.substring(11,13).toInt();
+    totpInfo.minu = dateStr.substring(14,16).toInt();
+    totpInfo.sec = dateStr.substring(17).toInt();
 
-    rtc.stopRTC();
-    rtc.setDate(totpInfo.day, totpInfo.mon, totpInfo.year);
-    rtc.setTime(totpInfo.hour, totpInfo.minu, totpInfo.sec);
-    rtc.startRTC();
-
+    updateRtc();
+    
     writeInt(TOTP_SEC_SAVE_ADDRESS, totpInfo.sec);
     writeInt(TOTP_MIN_SAVE_ADDRESS, totpInfo.minu);
     writeInt(TOTP_HOUR_SAVE_ADDRESS, totpInfo.hour);
@@ -301,11 +289,19 @@ void setDate() {
     dateSet = true;
   }
 
-  printWithInvertChar(date, 0, 15, datePosition, 1);
+  printWithInvertChar(dateStr, 0, 15, datePosition, 1);
 }
 
 void showTotpCode() {
   DEBUG_PRINTLN_INTERVAL("showTotpCode()");
+
+  totpInfo.mon = rtc.getMonth();
+  totpInfo.day = rtc.getDay();
+  totpInfo.year = rtc.getYear();
+  totpInfo.hour = rtc.getHours();
+  totpInfo.minu = rtc.getMinutes();
+  totpInfo.sec = rtc.getSeconds();
+
   arduboy.setCursor(0, 45);
   arduboy.println("A: set date");
   arduboy.println("B: set secret");
@@ -324,14 +320,25 @@ void showTotpCode() {
   totpCode = totp.getCode(GMT);
   printWithInvertChar(totpCode, 0, 10, -1, 2);
 
-  int sec = rtc.getSeconds();
-  int minu = rtc.getMinutes();
-  int hours = rtc.getHours();
-  int day = rtc.getDay();
-  int mon = rtc.getMonth();
-  int year = rtc.getYear();
-  String dateStr = padNum(mon) + "/" + padNum(day) + "/" + padNum(year) + " " + padNum(hours) + ":" + padNum(minu) + ":" + padNum(sec);
+  dateStr = getDateString(totpInfo);
+  
   printWithInvertChar(dateStr, 0, 30, -1, 1);
+}
+
+void updateHmacKey() {
+    totpInfo.secret.getBytes(secretBuf, totpInfo.secret.length() + 1);
+    base32.fromBase32(secretBuf, sizeof(secretBuf), (byte*&)hmacKey);
+}
+
+void updateRtc() {
+    rtc.stopRTC();
+    rtc.setDate(totpInfo.day, totpInfo.mon, totpInfo.year);
+    rtc.setTime(totpInfo.hour, totpInfo.minu, totpInfo.sec);
+    rtc.startRTC();
+}
+
+String getDateString(TotpInfo totpInfo) {
+  return padNum(totpInfo.mon) + "/" + padNum(totpInfo.day) + "/" + padNum(totpInfo.year) + " " + padNum(totpInfo.hour) + ":" + padNum(totpInfo.minu) + ":" + padNum(totpInfo.sec);
 }
 
 void writeString(int address, String str) {
