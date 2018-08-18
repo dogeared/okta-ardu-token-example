@@ -7,14 +7,19 @@
 
 //#define DEBUG 1
 
+const long LOOP_INTERVAL = 10000; // 10 seconds
+unsigned long previousMillis = 0;
+
 #ifdef DEBUG
   #define DEBUG_PRINT(x) Serial.print (x)
   #define DEBUG_PRINTDEC(x) Serial.print (x, DEC)
   #define DEBUG_PRINTLN(x) Serial.println (x)
+  #define DEBUG_PRINTLN_INTERVAL(x) unsigned long currentMillis = millis(); if (currentMillis - previousMillis >= LOOP_INTERVAL) { previousMillis = currentMillis; Serial.println(x); }
 #else
   #define DEBUG_PRINT(x)
   #define DEBUG_PRINTDEC(x)
   #define DEBUG_PRINTLN(x)
+  #define DEBUG_PRINTLN_INTERVAL(x)
 #endif
 
 const byte APP_ID = 0x2A;
@@ -44,7 +49,6 @@ struct TotpInfo {
 String totpCode;
 bool secretSet;
 int secretPosition;
-String secret;
 String date;
 bool dateSet;
 int datePosition;
@@ -93,8 +97,6 @@ void setup() {
 
   secretSet = false;
   secretPosition = 0;
-  secret = "MMMMMMMMMMMMMMMM";
-  //secret = "C46MPM6ZTP3X6HQB";
   dateSet = false;
   datePosition = 0;
   
@@ -108,7 +110,6 @@ void setup() {
     totpInfo = readTotpInfo();
     // TODO - DRY
     secretSet = true;
-    secret = totpInfo.secret;
     totpInfo.secret.getBytes(secretBuf, totpInfo.secret.length() + 1);
     base32.fromBase32(secretBuf, sizeof(secretBuf), (byte*&)hmacKey);
   }
@@ -192,7 +193,8 @@ String updateDate(String date, int datePosition, int addOrSub) {
 }
 
 void setSecret() {
-  // Okta like: C46MPM6ZTP3X6HQB
+  DEBUG_PRINTLN_INTERVAL("setSecret()");
+  // Okta secret like: C46MPM6ZTP3X6HQB
   arduboy.setCursor(0, 0);
   arduboy.print("Set OKTA Secret:");
   arduboy.setCursor(0, 30);
@@ -202,7 +204,7 @@ void setSecret() {
 
   if (arduboy.justPressed(RIGHT_BUTTON)) {
     secretPosition++;
-    if (secretPosition >= secret.length()) {
+    if (secretPosition >= totpInfo.secret.length()) {
       secretPosition = 0;
     }
   }
@@ -210,33 +212,31 @@ void setSecret() {
   if (arduboy.justPressed(LEFT_BUTTON)) {
     secretPosition--;
     if (secretPosition < 0) {
-      secretPosition = secret.length() - 1;
+      secretPosition = totpInfo.secret.length() - 1;
     }
   }
 
   if (arduboy.justPressed(DOWN_BUTTON)) {
-    secret = updateSecret(secret, secretPosition, -1);  
+    totpInfo.secret = updateSecret(totpInfo.secret, secretPosition, -1);  
   }
 
   if (arduboy.justPressed(UP_BUTTON)) {
-    secret = updateSecret(secret, secretPosition, 1);
+    totpInfo.secret = updateSecret(totpInfo.secret, secretPosition, 1);
   }
 
   if (arduboy.justPressed(A_BUTTON)) {
-    secret.getBytes(secretBuf, secret.length() + 1);
+    totpInfo.secret.getBytes(secretBuf, totpInfo.secret.length() + 1);
     base32.fromBase32(secretBuf, sizeof(secretBuf), (byte*&)hmacKey);
 
-    totpInfo.secret = secret;
     writeString(TOTP_SECRET_SAVE_ADDRESS, totpInfo.secret);
-
     secretSet = true;
   }
 
-  printWithInvertChar(secret, 0, 15, secretPosition, 1);
-  
+  printWithInvertChar(totpInfo.secret, 0, 15, secretPosition, 1);
 }
 
 void setDate() {
+  DEBUG_PRINTLN_INTERVAL("setDate()");
   arduboy.setCursor(0, 0);
   arduboy.print("Set Date (GMT):");
   arduboy.setCursor(0, 30);
@@ -305,7 +305,7 @@ void setDate() {
 }
 
 void showTotpCode() {
-
+  DEBUG_PRINTLN_INTERVAL("showTotpCode()");
   arduboy.setCursor(0, 45);
   arduboy.println("A: set date");
   arduboy.println("B: set secret");
