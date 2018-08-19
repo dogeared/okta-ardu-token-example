@@ -1,6 +1,5 @@
 #include <Arduboy2.h>
 #include <swRTC.h>
-#include <sha1.h>
 #include <TOTP.h>
 #include <Base32.h>
 #include <EEPROM.h>
@@ -142,33 +141,35 @@ void setSecret() {
   arduboy.println("l/r: set position");
   arduboy.println("A: save secret");
 
-  if (arduboy.justPressed(RIGHT_BUTTON)) {
-    secretPosition++;
-    if (secretPosition >= totpInfo.secret.length()) {
-      secretPosition = 0;
+  if (arduboy.everyXFrames(6)) {
+    if (arduboy.pressed(RIGHT_BUTTON)) {
+      secretPosition++;
+      if (secretPosition >= totpInfo.secret.length()) {
+        secretPosition = 0;
+      }
     }
-  }
-
-  if (arduboy.justPressed(LEFT_BUTTON)) {
-    secretPosition--;
-    if (secretPosition < 0) {
-      secretPosition = totpInfo.secret.length() - 1;
+  
+    if (arduboy.pressed(LEFT_BUTTON)) {
+      secretPosition--;
+      if (secretPosition < 0) {
+        secretPosition = totpInfo.secret.length() - 1;
+      }
     }
-  }
-
-  if (arduboy.justPressed(DOWN_BUTTON)) {
-    totpInfo.secret = updateSecret(totpInfo.secret, secretPosition, -1);  
-  }
-
-  if (arduboy.justPressed(UP_BUTTON)) {
-    totpInfo.secret = updateSecret(totpInfo.secret, secretPosition, 1);
+  
+    if (arduboy.pressed(DOWN_BUTTON)) {
+      totpInfo.secret = updateSecret(totpInfo.secret, secretPosition, -1);  
+    }
+  
+    if (arduboy.pressed(UP_BUTTON)) {
+      totpInfo.secret = updateSecret(totpInfo.secret, secretPosition, 1);
+    }  
   }
 
   if (arduboy.justPressed(A_BUTTON)) {
     writeString(TOTP_SECRET_SAVE_ADDRESS, totpInfo.secret);
     updateHmacKey();
     secretSet = true;
-  }
+  }    
 
   printWithInvertChar(totpInfo.secret, 0, 15, secretPosition, 1);
 }
@@ -184,33 +185,35 @@ void setDate() {
   arduboy.println("A: save date");
   arduboy.println("B: set secret");
 
-  if (arduboy.justPressed(RIGHT_BUTTON)) {
-    datePosition++;
-    if (datePosition == 2 or datePosition == 5 or datePosition == 10 or datePosition == 13 or datePosition == 16) {
+  if (arduboy.everyXFrames(6)) {
+    if (arduboy.pressed(RIGHT_BUTTON)) {
       datePosition++;
+      if (datePosition == 2 or datePosition == 5 or datePosition == 10 or datePosition == 13 or datePosition == 16) {
+        datePosition++;
+      }
+      if (datePosition >= dateStr.length()) {
+        datePosition = 0;
+      }
     }
-    if (datePosition >= dateStr.length()) {
-      datePosition = 0;
-    }
-  }
-
-  if (arduboy.justPressed(LEFT_BUTTON)) {
-    datePosition--;
-    if (datePosition == 2 or datePosition == 5 or datePosition == 10 or datePosition == 13 or datePosition == 16) {
+  
+    if (arduboy.pressed(LEFT_BUTTON)) {
       datePosition--;
+      if (datePosition == 2 or datePosition == 5 or datePosition == 10 or datePosition == 13 or datePosition == 16) {
+        datePosition--;
+      }
+  
+      if (datePosition < 0) {
+        datePosition = dateStr.length() - 1;
+      }
     }
-
-    if (datePosition < 0) {
-      datePosition = dateStr.length() - 1;
+  
+    if (arduboy.pressed(DOWN_BUTTON)) {
+      dateStr = updateDate(dateStr, datePosition, -1);  
     }
-  }
-
-  if (arduboy.justPressed(DOWN_BUTTON)) {
-    dateStr = updateDate(dateStr, datePosition, -1);  
-  }
-
-  if (arduboy.justPressed(UP_BUTTON)) {
-    dateStr = updateDate(dateStr, datePosition, 1);
+  
+    if (arduboy.pressed(UP_BUTTON)) {
+      dateStr = updateDate(dateStr, datePosition, 1);
+    }    
   }
 
   if (arduboy.justPressed(B_BUTTON)) {
