@@ -1,6 +1,8 @@
 ## OktaArduToken
 
-This project turns an [ArduBoy]() credit card size game machine into a [TOTP]() token for use with the [Okta Verify OTP] service.
+This project turns an [ArduBoy](https://arduboy.com/) credit card size game machine into a 
+[TOTP](https://tools.ietf.org/html/rfc6238) token for use with the 
+[Okta Verify OTP](https://help.okta.com/en/prod/Content/Topics/Mobile/Okta_Verify_Using.htm) service.
 
 Impractical you say? Well, yeah. 
 
@@ -15,21 +17,24 @@ What this application does to mitigate this is (a) saves the secret and (b) save
 time you turn on the ArduBoy, it checks to see if a secret has been set. If so, it goes directly to setting the date and time.
 On the date and time setting screen, it starts with the last set date and time to make it easier to set.
 
-However, this is a fun way to learn a little about TOTP and see it working against a real [Okta organization]().
+However, this is a fun way to learn a little about TOTP and see it working against a real [Okta organization](https://developer.okta.com).
 
-In "real life", you'll want to use the [Okta Verify]() mobile app. There's a lot less manual labor involved.
+In "real life", you'll want to use the Okta Verify mobile app 
+(available on [iOS](https://itunes.apple.com/us/app/okta-verify/id490179405?mt=8) and 
+[Android](https://play.google.com/store/apps/details?id=com.okta.android.auth&hl=en_US)). There's a lot less manual labor involved.
 
 ## Up and Running
 
 If you have an ArduBoy and want to see the app running, you can install the latest binary `.hex` file directly. 
 
-You can also drop the `.hex` file right onto the [ProjectABE]() ArduBoy emulator site to see it in action without having an 
-actual ArduBoy yourself. *NOTE:* ProjectABE does not have the ability to save data to the [EEPROM](). So, if you restart the 
-application there, you'll need to re-set both the shared secret and the time.
+You can also drop the `.hex` file right onto the [ProjectABE](https://felipemanga.github.io/ProjectABE/) ArduBoy emulator site to see it 
+in action without having an actual ArduBoy yourself. *NOTE:* ProjectABE does not have the ability to save data to the 
+[EEPROM](https://www.arduino.cc/en/Reference/EEPROM). So, if you restart the application there, you'll need to re-set both the shared 
+secret and the time.
 
-The easiest way to install OktaArduToken onto an actual ArduBoy is to use install the [Arduino IDE](). This allows you to both 
-edit and upload the source as well as providing the command line tool, `avrdude`, to upload binaries.
-
+The easiest way to install OktaArduToken onto an actual ArduBoy is to use install the 
+[Arduino IDE](https://www.arduino.cc/en/Main/Software). This allows you to both edit and upload the source as well as providing the 
+command line tool, `avrdude`, to upload binaries.
 
 Here's an example install command using `avrdude` on Mac:
 
@@ -98,7 +103,8 @@ character to `9` (it goes `A`-`Z` and then `0`-`9`).
 
 When the shared secret is set, press the `A` button to move on to the date and time setting screen.
 
-*NOTE:* More detail on obtaining the shared secret from Okta will be covered below
+*NOTE:* Watch the [Okta Developer Blog](https://developer.okta.com/blog) for a post on setting up Okta to enroll and enforce MFA and 
+use the OktaArduToken.
 
 ### Set Date and Time
 
@@ -128,3 +134,6 @@ second.
 ![totp](images/totp.png)
 
 Press the `A` button to return to the set date and time screen. Press the `B` button to return to the set shared secret screen.
+
+*NOTE:* Watch the [Okta Developer Blog](https://developer.okta.com/blog) for a post on setting up Okta to enroll and enforce MFA and 
+use the OktaArduToken.
