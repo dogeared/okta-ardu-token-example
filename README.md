@@ -4,6 +4,8 @@ This project turns an [ArduBoy](https://arduboy.com/) credit card size game mach
 [TOTP](https://tools.ietf.org/html/rfc6238) token for use with the 
 [Okta Verify OTP](https://help.okta.com/en/prod/Content/Topics/Mobile/Okta_Verify_Using.htm) service.
 
+![oktaardutoken](images/oktaardutoken.gif)
+
 Impractical you say? Well, yeah. 
 
 TOTP relies on a shared secret and an accurate clock.
@@ -17,7 +19,9 @@ What this application does to mitigate this is (a) saves the secret and (b) save
 time you turn on the ArduBoy, it checks to see if a secret has been set. If so, it goes directly to setting the date and time.
 On the date and time setting screen, it starts with the last set date and time to make it easier to set.
 
-However, this is a fun way to learn a little about TOTP and see it working against a real [Okta organization](https://developer.okta.com).
+![ardutoken](images/ardutoken.png)
+
+This is a fun way to learn a little about TOTP and see it working against a real [Okta organization](https://developer.okta.com).
 
 In "real life", you'll want to use the Okta Verify mobile app 
 (available on [iOS](https://itunes.apple.com/us/app/okta-verify/id490179405?mt=8) and 
@@ -137,3 +141,7 @@ Press the `A` button to return to the set date and time screen. Press the `B` bu
 
 *NOTE:* Watch the [Okta Developer Blog](https://developer.okta.com/blog) for a post on setting up Okta to enroll and enforce MFA and 
 use the OktaArduToken.
+
+Here's the OktaArduToken side-by-side with the Okta Verify mobile app:
+
+<video src="images/oktaardutoken.mp4" width="960" height="540" controls preload></video>
