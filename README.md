@@ -4,7 +4,7 @@ This project turns an [ArduBoy](https://arduboy.com/) credit card size game mach
 [TOTP](https://tools.ietf.org/html/rfc6238) token for use with the 
 [Okta Verify OTP](https://help.okta.com/en/prod/Content/Topics/Mobile/Okta_Verify_Using.htm) service.
 
-![oktaardutoken](images/oktaardutoken.gif | width=533)
+![oktaardutoken](images/oktaardutoken.gif)
 
 Impractical you say? Well, yeah. 
 
