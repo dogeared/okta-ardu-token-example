@@ -4,7 +4,7 @@ This project turns an [ArduBoy](https://arduboy.com/) credit card size game mach
 [TOTP](https://tools.ietf.org/html/rfc6238) token for use with the 
 [Okta Verify OTP](https://help.okta.com/en/prod/Content/Topics/Mobile/Okta_Verify_Using.htm) service.
 
-![oktaardutoken](images/oktaardutoken.gif)
+![oktaardutoken](images/oktaardutoken.gif | width=533)
 
 Impractical you say? Well, yeah. 
 
@@ -142,6 +142,4 @@ Press the `A` button to return to the set date and time screen. Press the `B` bu
 *NOTE:* Watch the [Okta Developer Blog](https://developer.okta.com/blog) for a post on setting up Okta to enroll and enforce MFA and 
 use the OktaArduToken.
 
-Here's the OktaArduToken side-by-side with the Okta Verify mobile app:
-
-<video src="images/oktaardutoken.mp4" width="960" height="540" controls preload></video>
+[Here's](images/oktaardutoken.mp4) the OktaArduToken side-by-side with the Okta Verify mobile app.
