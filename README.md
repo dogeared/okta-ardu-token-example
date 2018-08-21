@@ -142,4 +142,6 @@ Press the `A` button to return to the set date and time screen. Press the `B` bu
 *NOTE:* Watch the [Okta Developer Blog](https://developer.okta.com/blog) for a post on setting up Okta to enroll and enforce MFA and 
 use the OktaArduToken.
 
-[Here's](images/oktaardutoken.mp4) the OktaArduToken side-by-side with the Okta Verify mobile app.
+Here's the OktaArduToken side-by-side with the Okta Verify mobile app:
+
+![oktaardusidebyside](images/oktaardusidebyside.gif)
